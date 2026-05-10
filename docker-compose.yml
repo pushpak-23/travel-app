@@ -5,18 +5,21 @@ services:
     image: postgis/postgis:15-3.3
     container_name: travel_map_db
     environment:
-      POSTGRES_USER: traveler
-      POSTGRES_PASSWORD: travel123
-      POSTGRES_DB: travel_map_db
+      POSTGRES_USER: ${DB_USER:-traveler}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-travel123}
+      POSTGRES_DB: ${DB_NAME:-travel_map_db}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U traveler"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-traveler}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - travel_network
+    restart: unless-stopped
 
   backend:
     build:
@@ -24,18 +27,21 @@ services:
       target: dev
     container_name: travel_map_api
     environment:
-      DATABASE_URL: postgresql://traveler:travel123@postgres:5432/travel_map_db
+      DATABASE_URL: postgresql://${DB_USER:-traveler}:${DB_PASSWORD:-travel123}@postgres:5432/${DB_NAME:-travel_map_db}
       NODE_ENV: development
-      PORT: 5000
-      CORS_ORIGIN: http://localhost:3000
+      PORT: ${BACKEND_PORT:-5000}
+      CORS_ORIGIN: ${FRONTEND_URL:-http://localhost:3000}
     ports:
-      - "5000:5000"
+      - "${BACKEND_PORT:-5000}:5000"
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - ./backend:/app
       - /app/node_modules
+    networks:
+      - travel_network
+    restart: unless-stopped
     command: npm run dev
 
   frontend:
@@ -44,19 +50,24 @@ services:
       target: dev
     container_name: travel_map_app
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:5000
+      NEXT_PUBLIC_API_URL: ${BACKEND_URL:-http://localhost:5000}
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
       - backend
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      - /app/.next
+    networks:
+      - travel_network
+    restart: unless-stopped
     command: npm run dev
 
 volumes:
   postgres_data:
+    driver: local
 
 networks:
-  default:
-    name: travel_map_network
+  travel_network:
+    driver: bridge

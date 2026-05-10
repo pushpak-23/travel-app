@@ -5,46 +5,66 @@ services:
     image: postgis/postgis:15-3.3
     container_name: travel_map_db_prod
     environment:
-      POSTGRES_USER: traveler
-      POSTGRES_PASSWORD: travel123
-      POSTGRES_DB: travel_map_db
+      POSTGRES_USER: ${DB_USER:-traveler}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-travel123}
+      POSTGRES_DB: ${DB_NAME:-travel_map_db}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U traveler"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-traveler}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - travel_network_prod
+    restart: unless-stopped
 
   backend:
-    build: ./backend
+    image: travel-map-backend:prod
     container_name: travel_map_api_prod
     environment:
-      DATABASE_URL: postgresql://traveler:travel123@postgres:5432/travel_map_db
       NODE_ENV: production
-      PORT: 5000
-      CORS_ORIGIN: http://localhost:3000
+      PORT: ${BACKEND_PORT:-5000}
+      DATABASE_URL: postgresql://${DB_USER:-traveler}:${DB_PASSWORD:-travel123}@postgres:5432/${DB_NAME:-travel_map_db}
+      CORS_ORIGIN: ${FRONTEND_URL:-http://localhost:3000}
     ports:
-      - "5000:5000"
+      - "${BACKEND_PORT:-5000}:5000"
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - travel_network_prod
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
-    build: ./frontend
+    image: travel-map-frontend:prod
     container_name: travel_map_app_prod
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:5000
+      NEXT_PUBLIC_API_URL: ${BACKEND_URL:-http://localhost:5000}
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
       - backend
+    networks:
+      - travel_network_prod
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres_data_prod:
+    driver: local
 
 networks:
-  default:
-    name: travel_map_network_prod
+  travel_network_prod:
+    driver: bridge
