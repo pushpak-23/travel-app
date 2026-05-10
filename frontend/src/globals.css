@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .glass-effect {
+    @apply bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-cyan-300 via-emerald-400 to-amber-400 bg-clip-text text-transparent;
+  }
+
+  .smooth-transition {
+    @apply transition-all duration-300 ease-out;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-slate-950 text-white overflow-x-hidden;
+}
+
+/* Leaflet customizations */
+.leaflet-container {
+  @apply bg-slate-900;
+}
+
+.leaflet-tiles-dark {
+  filter: invert(0.9) hue-rotate(200deg);
+}
+
+.leaflet-popup-content-wrapper {
+  @apply bg-slate-900 text-white rounded-lg shadow-xl;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.leaflet-popup-content {
+  @apply text-white;
+  margin: 0;
+}
+
+.leaflet-popup-tip {
+  @apply bg-slate-900;
+}
+
+.leaflet-control {
+  @apply shadow-lg rounded;
+}
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  @apply bg-white/90 hover:bg-white smooth-transition;
+  font-weight: bold;
+}
+
+.leaflet-control-fullscreen {
+  @apply bg-white/90 hover:bg-white smooth-transition;
+}
+
+.leaflet-marker-icon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.custom-marker {
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+}
+
+/* Smooth scroll */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-emerald-600 rounded-lg hover:bg-emerald-500;
+}
