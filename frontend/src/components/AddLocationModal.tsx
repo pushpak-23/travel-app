@@ -102,6 +102,15 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({
 
   const handleSelectPlace = (result: SearchResult) => {
     const detectedCategory = detectCategoryFromSearchResult(result);
+    
+    // Extract state from display_name (usually the 3rd-last part)
+    // Format is typically: "City, District, State, Country"
+    const addressParts = result.display_name.split(',').map(p => p.trim());
+    let detectedState = '';
+    if (addressParts.length >= 3) {
+      // Try to get state (usually 3rd from end or similar)
+      detectedState = addressParts[addressParts.length - 2] || '';
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -109,11 +118,14 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({
       latitude: parseFloat(result.lat),
       longitude: parseFloat(result.lon),
       category: detectedCategory,
+      state: detectedState,
+      itinerary_name: 'General', // Default itinerary for auto-added locations
     }));
 
-    setCategoryDetectionHint(`Auto-selected category: ${detectedCategory.replace('_', ' ')}`);
+    setCategoryDetectionHint(`Auto-selected: ${detectedCategory.replace('_', ' ')} in ${detectedState}`);
     setSearchQuery('');
     setSearchResults([]);
+    setShowManualEntry(true); // Show the form so user can review/edit before submitting
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

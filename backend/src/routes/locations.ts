@@ -38,16 +38,18 @@ router.post('/', async (req: Request, res: Response) => {
       longitude,
       category,
       subcategory,
+      state,
+      itinerary_name,
       priority,
       tags = [],
     } = req.body;
 
     const id = uuidv4();
     const result = await pool.query(
-      `INSERT INTO locations (id, name, description, latitude, longitude, category, subcategory, priority, tags, visited)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, false)
+      `INSERT INTO locations (id, name, description, latitude, longitude, category, subcategory, state, itinerary_name, priority, tags, visited)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, false)
        RETURNING *`,
-      [id, name, description, latitude, longitude, category, subcategory, priority, JSON.stringify(tags)]
+      [id, name, description, latitude, longitude, category, subcategory, state || null, itinerary_name || null, priority, JSON.stringify(tags)]
     );
 
     res.status(201).json(result.rows[0]);
@@ -59,13 +61,14 @@ router.post('/', async (req: Request, res: Response) => {
 // Update location
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    const { name, description, visited, priority, tags } = req.body;
+    const { name, description, visited, priority, tags, state, itinerary_name } = req.body;
     const result = await pool.query(
       `UPDATE locations SET name = COALESCE($1, name), description = COALESCE($2, description),
        visited = COALESCE($3, visited), priority = COALESCE($4, priority),
-       tags = COALESCE($5, tags), updated_at = NOW()
-       WHERE id = $6 RETURNING *`,
-      [name, description, visited, priority, tags ? JSON.stringify(tags) : null, req.params.id]
+       tags = COALESCE($5, tags), state = COALESCE($6, state), 
+       itinerary_name = COALESCE($7, itinerary_name), updated_at = NOW()
+       WHERE id = $8 RETURNING *`,
+      [name, description, visited, priority, tags ? JSON.stringify(tags) : null, state || null, itinerary_name || null, req.params.id]
     );
 
     if (result.rows.length === 0) {
