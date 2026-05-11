@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { pool } from '../index';
+import { pool } from '../db';
 
 const router = Router();
 
@@ -45,6 +45,16 @@ router.post('/', async (req: Request, res: Response) => {
     // Validate required fields
     if (!start_location_id || !end_location_id) {
       return res.status(400).json({ error: 'start_location_id and end_location_id are required' });
+    }
+
+    // Verify referenced locations exist to avoid FK violations
+    const startCheck = await pool.query('SELECT 1 FROM locations WHERE id = $1', [start_location_id]);
+    if (startCheck.rowCount === 0) {
+      return res.status(400).json({ error: `start_location_id ${start_location_id} does not exist` });
+    }
+    const endCheck = await pool.query('SELECT 1 FROM locations WHERE id = $1', [end_location_id]);
+    if (endCheck.rowCount === 0) {
+      return res.status(400).json({ error: `end_location_id ${end_location_id} does not exist` });
     }
 
     // Generate default name if not provided

@@ -1,0 +1,84 @@
+name: Docker Build and Smoke Test
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  docker-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build -t travel-map-backend:prod --file backend/Dockerfile --target prod ./backend
+
+      - name: Build frontend image
+        run: docker build -t travel-map-frontend:prod --file frontend/Dockerfile --target prod ./frontend
+
+      - name: Start production stack
+        run: docker compose -f docker-compose.prod.yml up -d
+
+      - name: Wait for services
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:5000/health > /dev/null && curl -fsS http://localhost:3000 > /dev/null; then
+              echo "Services are up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Services failed to become ready in time"
+          docker compose -f docker-compose.prod.yml ps
+          docker compose -f docker-compose.prod.yml logs
+          exit 1
+
+      - name: Run database migrations
+        run: docker compose -f docker-compose.prod.yml exec -T backend npm run migrate
+
+      - name: Smoke test backend health
+        run: curl -fsS http://localhost:5000/health
+
+      - name: Smoke test API
+        run: curl -fsS http://localhost:5000/api/locations
+
+      - name: Smoke test frontend
+        run: curl -fsS http://localhost:3000 > /tmp/frontend.html
+
+      - name: Smoke test frontend assets
+        run: |
+          css_path=$(grep -o '_next/static/css/[^"]*' /tmp/frontend.html | head -1)
+          if [ -z "$css_path" ]; then
+            echo "Could not find CSS asset path in frontend HTML"
+            exit 1
+          fi
+          curl -fsS "http://localhost:3000/${css_path}" > /dev/null
+
+      - name: Smoke test CORS (allowed origin)
+        run: |
+          headers=$(curl -sSI -H "Origin: http://localhost:3000" http://localhost:5000/api/locations)
+          echo "$headers"
+          echo "$headers" | grep -i "access-control-allow-origin: http://localhost:3000"
+
+      - name: Smoke test restart behavior
+        run: |
+          docker compose -f docker-compose.prod.yml restart backend frontend
+          sleep 10
+          curl -fsS http://localhost:5000/health
+          curl -fsS http://localhost:3000 > /dev/null
+
+      - name: Show status and logs on failure
+        if: failure()
+        run: |
+          docker compose -f docker-compose.prod.yml ps
+          docker compose -f docker-compose.prod.yml logs
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.prod.yml down -v

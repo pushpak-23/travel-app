@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgis/postgis:15-3.3
@@ -38,7 +36,7 @@ services:
       - travel_network_prod
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:5000/health', (r) => { r.resume(); process.exit(r.statusCode===200?0:1); }).on('error', () => process.exit(1));"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -56,7 +54,7 @@ services:
       - travel_network_prod
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "node", "-e", "require('http').get('http://' + process.env.HOSTNAME + ':3000', (r) => { r.resume(); process.exit(r.statusCode===200?0:1); }).on('error', () => process.exit(1));"]
       interval: 30s
       timeout: 10s
       retries: 3

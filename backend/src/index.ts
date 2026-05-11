@@ -1,21 +1,16 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { Pool } from 'pg';
 import locationRoutes from './routes/locations';
 import routeRoutes from './routes/routes';
 import noteRoutes from './routes/notes';
 import journeyRoutes from './routes/journeys';
+import { pool } from './db';
 
 dotenv.config();
 
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
-
-// Database connection pool
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
 
 // Middleware
 app.use(cors({
@@ -57,8 +52,10 @@ app.use((err: any, req: Request, res: Response) => {
   res.status(500).json({ error: err.message });
 });
 
-app.listen(PORT, () => {
-  console.log(`🌍 Travel Map API running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🌍 Travel Map API running on port ${PORT}`);
+  });
+}
 
 export default app;

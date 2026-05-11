@@ -1,4 +1,4 @@
-import { pool } from '../index';
+import { pool } from '../db';
 
 async function migrate() {
   try {
@@ -93,9 +93,11 @@ async function migrate() {
     console.log('✓ Indices created');
 
     console.log('✅ Database migrations completed successfully!');
+    await pool.end();
     process.exit(0);
   } catch (error) {
     console.error('❌ Migration failed:', error);
+    await pool.end();
     process.exit(1);
   }
 }

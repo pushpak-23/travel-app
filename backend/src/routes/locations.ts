@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { pool } from '../index';
+import { pool } from '../db';
 import { Location } from '../types';
 
 const router = Router();
