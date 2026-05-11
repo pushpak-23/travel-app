@@ -90,6 +90,14 @@ export const InteractiveMap: React.FC = () => {
     if (!map.current) return;
 
     const visibleLocations = selectedState ? filteredLocations : locations;
+    const visibleIds = new Set(visibleLocations.map((location) => location.id));
+
+    Object.keys(markersRef.current).forEach((id) => {
+      if (!visibleIds.has(id)) {
+        map.current!.removeLayer(markersRef.current[id]);
+        delete markersRef.current[id];
+      }
+    });
 
     visibleLocations.forEach((location) => {
       // Remove old marker if exists
@@ -111,8 +119,12 @@ export const InteractiveMap: React.FC = () => {
       const color = categoryColors[location.category] || '#6366f1';
 
       const customIcon = L.divIcon({
-        html: `<div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">📍</div>`,
-        iconSize: [30, 30],
+        html: `
+          <div class="marker-pin" style="--marker-color: ${color}">
+            <span class="marker-dot"></span>
+          </div>
+        `,
+        iconSize: [32, 32],
         className: 'custom-marker',
       });
 
