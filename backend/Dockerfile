@@ -15,7 +15,8 @@ RUN npm run build
 
 FROM node:18-alpine AS prod
 WORKDIR /app
-ENV NODE_ENV production
+ENV NODE_ENV=production
+ENV PORT=5000
 
 # Copy package files
 COPY package*.json ./
