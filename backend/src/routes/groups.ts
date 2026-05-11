@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { pool } from '../db';
 import { v4 as uuidv4 } from 'uuid';
+import { normalizeStateName } from '../utils/state';
 
 const router = express.Router();
 
@@ -19,8 +20,8 @@ router.get('/grouped', async (req: Request, res: Response) => {
 
     // Group locations by state, then by itinerary
     for (const location of result.rows) {
-      const state = location.state || 'Unassigned';
-      const itinerary = location.itinerary_name || 'General';
+      const state = normalizeStateName(location.state) || 'Unassigned';
+      const itinerary = (location.itinerary_name || 'General').trim() || 'General';
 
       if (!grouped[state]) {
         grouped[state] = {};
@@ -46,13 +47,14 @@ router.get('/grouped', async (req: Request, res: Response) => {
 router.get('/by-state/:state', async (req: Request, res: Response) => {
   try {
     const { state } = req.params;
+    const normalizedState = normalizeStateName(state);
     const result = await pool.query(
       `SELECT id, name, description, latitude, longitude, category, subcategory, 
               state, itinerary_name, visited, priority, tags
        FROM locations
-       WHERE state = $1 OR (state IS NULL AND $1 = 'Unassigned')
+       WHERE LOWER(TRIM(COALESCE(state, ''))) = LOWER(TRIM($1)) OR (state IS NULL AND $1 = 'Unassigned')
        ORDER BY itinerary_name ASC, priority DESC, name ASC`,
-      [state === 'Unassigned' ? null : state]
+      [normalizedState === 'Unassigned' ? null : normalizedState]
     );
 
     res.json(result.rows.map((loc) => ({
@@ -69,14 +71,15 @@ router.get('/by-state/:state', async (req: Request, res: Response) => {
 router.get('/by-state/:state/itinerary/:itinerary', async (req: Request, res: Response) => {
   try {
     const { state, itinerary } = req.params;
+    const normalizedState = normalizeStateName(state);
     const result = await pool.query(
       `SELECT id, name, description, latitude, longitude, category, subcategory, 
               state, itinerary_name, visited, priority, tags
        FROM locations
-       WHERE (state = $1 OR (state IS NULL AND $1 = 'Unassigned'))
-       AND (itinerary_name = $2 OR (itinerary_name IS NULL AND $2 = 'General'))
+       WHERE (LOWER(TRIM(COALESCE(state, ''))) = LOWER(TRIM($1)) OR (state IS NULL AND $1 = 'Unassigned'))
+       AND (LOWER(TRIM(COALESCE(itinerary_name, ''))) = LOWER(TRIM($2)) OR (itinerary_name IS NULL AND $2 = 'General'))
        ORDER BY priority DESC, name ASC`,
-      [state === 'Unassigned' ? null : state, itinerary === 'General' ? null : itinerary]
+      [normalizedState === 'Unassigned' ? null : normalizedState, itinerary === 'General' ? null : itinerary]
     );
 
     res.json(result.rows.map((loc) => ({
@@ -98,7 +101,8 @@ router.get('/states', async (req: Request, res: Response) => {
        ORDER BY state ASC`
     );
 
-    res.json(result.rows.map((row) => row.state));
+    const normalizedStates = Array.from(new Set(result.rows.map((row) => normalizeStateName(row.state) || 'Unassigned'))).sort();
+    res.json(normalizedStates);
   } catch (error) {
     console.error('Error fetching states:', error);
     res.status(500).json({ error: (error as Error).message });
@@ -109,12 +113,13 @@ router.get('/states', async (req: Request, res: Response) => {
 router.get('/states/:state/itineraries', async (req: Request, res: Response) => {
   try {
     const { state } = req.params;
+    const normalizedState = normalizeStateName(state);
     const result = await pool.query(
       `SELECT DISTINCT COALESCE(itinerary_name, 'General') as itinerary
        FROM locations
-       WHERE state = $1 OR (state IS NULL AND $1 = 'Unassigned')
+       WHERE LOWER(TRIM(COALESCE(state, ''))) = LOWER(TRIM($1)) OR (state IS NULL AND $1 = 'Unassigned')
        ORDER BY itinerary ASC`,
-      [state === 'Unassigned' ? null : state]
+      [normalizedState === 'Unassigned' ? null : normalizedState]
     );
 
     res.json(result.rows.map((row) => row.itinerary));

@@ -20,7 +20,7 @@ export const InteractiveMap: React.FC = () => {
   const markersRef = useRef<{ [key: string]: L.Marker }>({});
   const polylinesRef = useRef<{ [key: string]: L.Polyline }>({});
 
-  const { locations, routes, selectedLocation, mapCenter, mapZoom, selectLocation } = useMapStore();
+  const { locations, routes, selectedLocation, mapCenter, mapZoom, selectLocation, filteredLocations, selectedState } = useMapStore();
 
   const toFiniteNumber = (value: unknown): number | null => {
     const num = Number(value);
@@ -89,7 +89,9 @@ export const InteractiveMap: React.FC = () => {
   useEffect(() => {
     if (!map.current) return;
 
-    locations.forEach((location) => {
+    const visibleLocations = selectedState ? filteredLocations : locations;
+
+    visibleLocations.forEach((location) => {
       // Remove old marker if exists
       if (markersRef.current[location.id]) {
         map.current!.removeLayer(markersRef.current[location.id]);
@@ -97,6 +99,7 @@ export const InteractiveMap: React.FC = () => {
 
       // Create custom marker with category color
       const categoryColors: { [key: string]: string } = {
+        city: '#0ea5e9',      // sky
         village: '#10b981',    // green
         town: '#3b82f6',       // blue
         trek: '#f97316',       // orange
@@ -128,7 +131,7 @@ export const InteractiveMap: React.FC = () => {
 
       markersRef.current[location.id] = marker;
     });
-  }, [locations, selectLocation]);
+  }, [locations, filteredLocations, selectedState, selectLocation]);
 
   // Add/update routes when routes change
   useEffect(() => {
@@ -154,6 +157,12 @@ export const InteractiveMap: React.FC = () => {
       for (const route of routes) {
         const startLocation = locations.find((l) => l.id === route.start_location_id);
         const endLocation = locations.find((l) => l.id === route.end_location_id);
+
+        if (selectedState) {
+          if (startLocation?.state !== selectedState && endLocation?.state !== selectedState) {
+            continue;
+          }
+        }
 
         if (!startLocation || !endLocation) continue;
 
@@ -330,7 +339,7 @@ export const InteractiveMap: React.FC = () => {
     };
 
     fetchAndDrawRoutes();
-  }, [routes, locations]);
+  }, [routes, locations, selectedState]);
 
 
   // Update map when selected location changes

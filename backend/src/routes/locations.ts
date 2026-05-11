@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { pool } from '../db';
 import { Location } from '../types';
+import { normalizeStateName } from '../utils/state';
 
 const router = Router();
 
@@ -43,13 +44,15 @@ router.post('/', async (req: Request, res: Response) => {
       priority,
       tags = [],
     } = req.body;
+    const normalizedState = normalizeStateName(state);
+    const normalizedItinerary = (itinerary_name || '').trim();
 
     const id = uuidv4();
     const result = await pool.query(
       `INSERT INTO locations (id, name, description, latitude, longitude, category, subcategory, state, itinerary_name, priority, tags, visited)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, false)
        RETURNING *`,
-      [id, name, description, latitude, longitude, category, subcategory, state || null, itinerary_name || null, priority, JSON.stringify(tags)]
+      [id, name, description, latitude, longitude, category, subcategory, normalizedState || null, normalizedItinerary || null, priority, JSON.stringify(tags)]
     );
 
     res.status(201).json(result.rows[0]);
@@ -62,13 +65,15 @@ router.post('/', async (req: Request, res: Response) => {
 router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { name, description, visited, priority, tags, state, itinerary_name } = req.body;
+    const normalizedState = normalizeStateName(state);
+    const normalizedItinerary = (itinerary_name || '').trim();
     const result = await pool.query(
       `UPDATE locations SET name = COALESCE($1, name), description = COALESCE($2, description),
        visited = COALESCE($3, visited), priority = COALESCE($4, priority),
        tags = COALESCE($5, tags), state = COALESCE($6, state), 
        itinerary_name = COALESCE($7, itinerary_name), updated_at = NOW()
        WHERE id = $8 RETURNING *`,
-      [name, description, visited, priority, tags ? JSON.stringify(tags) : null, state || null, itinerary_name || null, req.params.id]
+      [name, description, visited, priority, tags ? JSON.stringify(tags) : null, normalizedState || null, normalizedItinerary || null, req.params.id]
     );
 
     if (result.rows.length === 0) {

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { normalizeStateName } from '@/lib/state';
 
 export interface Location {
   id: string;
@@ -6,7 +7,7 @@ export interface Location {
   description: string;
   latitude: number;
   longitude: number;
-  category: 'village' | 'town' | 'trek' | 'stay' | 'cafe' | 'hidden_gem';
+  category: 'city' | 'village' | 'town' | 'trek' | 'stay' | 'cafe' | 'hidden_gem';
   subcategory?: string;
   state?: string;
   itinerary_name?: string;
@@ -57,6 +58,7 @@ interface MapStore {
   setLocationGroups: (groups: Record<string, Record<string, Location[]>>) => void;
   selectState: (state: string | null) => void;
   selectItinerary: (itinerary: string | null) => void;
+  clearSelection: () => void;
   updateFilteredLocations: () => void;
 }
 
@@ -76,9 +78,16 @@ export const useMapStore = create<MapStore>((set) => ({
   
   setLocations: (locations) => set((state) => {
     // Update filtered locations when setting new locations
-    const filtered = state.selectedState 
-      ? locations.filter((loc) => loc.state === state.selectedState)
-      : locations;
+    const filtered = locations.filter((loc) => {
+      const locationState = normalizeStateName(loc.state) || 'Unassigned';
+      if (state.selectedState && locationState !== normalizeStateName(state.selectedState)) {
+        return false;
+      }
+      if (state.selectedItinerary && (loc.itinerary_name || 'General').trim() !== state.selectedItinerary) {
+        return false;
+      }
+      return true;
+    });
     return { locations, filteredLocations: filtered };
   }),
   setRoutes: (routes) => set({ routes }),
@@ -87,10 +96,29 @@ export const useMapStore = create<MapStore>((set) => ({
   setMapCenter: (center) => set({ mapCenter: center }),
   setMapZoom: (zoom) => set({ mapZoom: zoom }),
   addLocation: (location) => set((state) => ({
-    locations: [...state.locations, location],
+    locations: [...state.locations, {
+      ...location,
+      state: normalizeStateName(location.state) || undefined,
+      itinerary_name: (location.itinerary_name || 'General').trim() || 'General',
+    }],
+    filteredLocations: [...state.locations, {
+      ...location,
+      state: normalizeStateName(location.state) || undefined,
+      itinerary_name: (location.itinerary_name || 'General').trim() || 'General',
+    }].filter((loc) => {
+      const locationState = normalizeStateName(loc.state) || 'Unassigned';
+      if (state.selectedState && locationState !== normalizeStateName(state.selectedState)) {
+        return false;
+      }
+      if (state.selectedItinerary && (loc.itinerary_name || 'General').trim() !== state.selectedItinerary) {
+        return false;
+      }
+      return true;
+    }),
   })),
   removeLocation: (id) => set((state) => ({
     locations: state.locations.filter((loc) => loc.id !== id),
+    filteredLocations: state.filteredLocations.filter((loc) => loc.id !== id),
   })),
   addRoute: (route) => set((state) => ({
     routes: [...state.routes, route],
@@ -102,37 +130,42 @@ export const useMapStore = create<MapStore>((set) => ({
   // Group management
   setLocationGroups: (groups) => set({ locationGroups: groups }),
   selectState: (state) => set((store) => {
-    const selectedState = state;
+    const selectedState = normalizeStateName(state) || null;
     const selectedItinerary = null; // Reset itinerary when changing state
     
     // Filter locations by selected state
     const filtered = selectedState 
-      ? store.locations.filter((loc) => loc.state === selectedState)
+      ? store.locations.filter((loc) => normalizeStateName(loc.state) === selectedState)
       : store.locations;
     
     return { selectedState, selectedItinerary, filteredLocations: filtered };
   }),
   selectItinerary: (itinerary) => set((store) => {
-    const selectedItinerary = itinerary;
+    const selectedItinerary = itinerary ? itinerary.trim() : null;
     
     // Filter locations by selected state and itinerary
     let filtered = store.locations;
     if (store.selectedState) {
-      filtered = filtered.filter((loc) => loc.state === store.selectedState);
+      filtered = filtered.filter((loc) => normalizeStateName(loc.state) === store.selectedState);
     }
     if (selectedItinerary) {
-      filtered = filtered.filter((loc) => loc.itinerary_name === selectedItinerary);
+      filtered = filtered.filter((loc) => (loc.itinerary_name || 'General').trim() === selectedItinerary);
     }
     
     return { selectedItinerary, filteredLocations: filtered };
   }),
+  clearSelection: () => set((state) => ({
+    selectedState: null,
+    selectedItinerary: null,
+    filteredLocations: state.locations,
+  })),
   updateFilteredLocations: () => set((state) => {
     let filtered = state.locations;
     if (state.selectedState) {
-      filtered = filtered.filter((loc) => loc.state === state.selectedState);
+      filtered = filtered.filter((loc) => normalizeStateName(loc.state) === state.selectedState);
     }
     if (state.selectedItinerary) {
-      filtered = filtered.filter((loc) => loc.itinerary_name === state.selectedItinerary);
+      filtered = filtered.filter((loc) => (loc.itinerary_name || 'General').trim() === state.selectedItinerary);
     }
     return { filteredLocations: filtered };
   }),

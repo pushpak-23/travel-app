@@ -23,7 +23,7 @@ export default function Home() {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'grouped'>('grouped');
-  const [locationCategories] = useState<string[]>(['all', 'village', 'town', 'trek', 'stay', 'cafe', 'hidden_gem']);
+  const [locationCategories] = useState<string[]>(['all', 'city', 'town', 'village', 'trek', 'stay', 'cafe', 'hidden_gem']);
 
   return (
     <main className="w-full h-screen bg-gradient-to-br from-slate-950 via-teal-950 to-emerald-950 overflow-hidden">

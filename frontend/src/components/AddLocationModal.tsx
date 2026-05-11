@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMapStore, Location } from '@/store/mapStore';
 import { locationAPI } from '@/lib/api';
+import { normalizeStateName } from '@/lib/state';
 
 interface AddLocationModalProps {
   isOpen: boolean;
@@ -30,11 +31,51 @@ const detectCategoryFromSearchResult = (result: SearchResult): Location['categor
   if (combined.includes('hotel') || combined.includes('guest_house') || combined.includes('resort') || combined.includes('hostel')) return 'stay';
   if ((classValue === 'natural' && (combined.includes('peak') || combined.includes('ridge') || combined.includes('valley'))) || combined.includes('trail') || combined.includes('trek')) return 'trek';
 
-  if (combined.includes('city') || combined.includes('town') || combined.includes('municipality')) return 'town';
+  if (combined.includes('city') || combined.includes('metropolis') || combined.includes('municipality')) return 'city';
+  if (combined.includes('town')) return 'town';
   if (combined.includes('village') || combined.includes('hamlet') || combined.includes('suburb') || combined.includes('neighbourhood')) return 'village';
 
   // Default to town for unknown settlements to avoid always biasing to village.
   return 'town';
+};
+
+const extractStateFromDisplayName = (displayName: string) => {
+  const parts = displayName.split(',').map((part) => part.trim()).filter(Boolean);
+  if (parts.length < 2) {
+    return '';
+  }
+
+  const knownCountryTokens = new Set(['india', 'bharat']);
+  const filtered = parts.filter((part) => !knownCountryTokens.has(part.toLowerCase()));
+  if (filtered.length < 2) {
+    return '';
+  }
+
+  return filtered[filtered.length - 2] || '';
+};
+
+const reverseGeocodeState = async (latitude: number, longitude: number) => {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+    );
+    if (!response.ok) {
+      return '';
+    }
+
+    const data = await response.json();
+    const address = data?.address || {};
+    return (
+      address.state ||
+      address.state_district ||
+      address.county ||
+      address.region ||
+      ''
+    );
+  } catch (error) {
+    console.error('Reverse geocode failed:', error);
+    return '';
+  }
 };
 
 export const AddLocationModal: React.FC<AddLocationModalProps> = ({
@@ -71,6 +112,8 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({
   const [showManualEntry, setShowManualEntry] = useState(true);
   const [categoryDetectionHint, setCategoryDetectionHint] = useState('');
 
+  const categoryOptions: Location['category'][] = ['city', 'town', 'village', 'trek', 'stay', 'cafe', 'hidden_gem'];
+
   // Search places using Nominatim API (free, no API key needed)
   useEffect(() => {
     const searchPlaces = async () => {
@@ -102,15 +145,7 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({
 
   const handleSelectPlace = (result: SearchResult) => {
     const detectedCategory = detectCategoryFromSearchResult(result);
-    
-    // Extract state from display_name (usually the 3rd-last part)
-    // Format is typically: "City, District, State, Country"
-    const addressParts = result.display_name.split(',').map(p => p.trim());
-    let detectedState = '';
-    if (addressParts.length >= 3) {
-      // Try to get state (usually 3rd from end or similar)
-      detectedState = addressParts[addressParts.length - 2] || '';
-    }
+    const detectedState = normalizeStateName(extractStateFromDisplayName(result.display_name));
 
     setFormData((prev) => ({
       ...prev,
@@ -122,7 +157,9 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({
       itinerary_name: 'General', // Default itinerary for auto-added locations
     }));
 
-    setCategoryDetectionHint(`Auto-selected: ${detectedCategory.replace('_', ' ')} in ${detectedState}`);
+    setCategoryDetectionHint(
+      `Auto-selected: ${detectedCategory.replace('_', ' ')}${detectedState ? ` in ${detectedState}` : ''}`
+    );
     setSearchQuery('');
     setSearchResults([]);
     setShowManualEntry(true); // Show the form so user can review/edit before submitting
@@ -145,6 +182,14 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({
         .map((t: string) => t.trim())
         .filter((t: string) => t.length > 0);
 
+      const resolvedState = normalizeStateName(
+        formData.state?.trim() ||
+        (await reverseGeocodeState(
+          parseFloat(String(formData.latitude)) || 31.7683,
+          parseFloat(String(formData.longitude)) || 77.1734
+        ))
+      );
+
       const response = await locationAPI.create({
         name: formData.name.trim(),
         description: formData.description.trim(),
@@ -153,7 +198,7 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({
         category: formData.category,
         priority: Math.min(5, Math.max(1, parseInt(String(formData.priority)) || 3)),
         tags,
-        state: formData.state?.trim() || undefined,
+        state: resolvedState || undefined,
         itinerary_name: formData.itinerary_name?.trim() || undefined,
         visited: false,
       } as any);
@@ -362,12 +407,13 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({
                           }}
                           className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-blue-500 smooth-transition text-xs"
                         >
-                          <option value="village">Village</option>
-                          <option value="town">Town</option>
-                          <option value="trek">Trek</option>
-                          <option value="stay">Stay</option>
-                          <option value="cafe">Café</option>
-                          <option value="hidden_gem">Hidden Gem</option>
+                          {categoryOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option === 'hidden_gem'
+                                ? 'Hidden Gem'
+                                : option.charAt(0).toUpperCase() + option.slice(1)}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div>

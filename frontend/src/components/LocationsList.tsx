@@ -11,7 +11,7 @@ interface LocationsListProps {
 }
 
 export const LocationsList: React.FC<LocationsListProps> = ({ filterCategory = 'all', onFilterChange }) => {
-  const { locations, setLocations, setRoutes, selectLocation } = useMapStore();
+  const { locations, filteredLocations: activeLocations, selectedState, selectedItinerary, setLocations, setRoutes, selectLocation } = useMapStore();
   const [loading, setLoading] = useState(true);
   const [editingLocation, setEditingLocation] = useState<{
     id: string;
@@ -23,6 +23,8 @@ export const LocationsList: React.FC<LocationsListProps> = ({ filterCategory = '
   const categoryLabel = (category: string) => category.replace('_', ' ');
   const categoryIcon = (category: string) => {
     switch (category) {
+      case 'city':
+        return '🏙️';
       case 'village':
         return '🏡';
       case 'town':
@@ -114,8 +116,8 @@ export const LocationsList: React.FC<LocationsListProps> = ({ filterCategory = '
 
   const filteredLocations =
     filterCategory === 'all'
-      ? locations
-      : locations.filter((loc) => loc.category === filterCategory);
+      ? (selectedState || selectedItinerary ? activeLocations : locations)
+      : (selectedState || selectedItinerary ? activeLocations : locations).filter((loc) => loc.category === filterCategory);
 
   if (loading) {
     return (
@@ -132,6 +134,12 @@ export const LocationsList: React.FC<LocationsListProps> = ({ filterCategory = '
   return (
     <>
       <div className="space-y-4">
+        {(selectedState || selectedItinerary) && (
+          <div className="text-xs text-emerald-200/80 px-1">
+            Showing {selectedState || 'all states'}{selectedItinerary ? ` • ${selectedItinerary}` : ''}
+          </div>
+        )}
+
         <div className="space-y-3">
         {filteredLocations.map((location, idx) => (
           <motion.div

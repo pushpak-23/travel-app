@@ -4,7 +4,7 @@ export interface Location {
   description: string;
   latitude: number;
   longitude: number;
-  category: 'village' | 'town' | 'trek' | 'stay' | 'cafe' | 'hidden_gem';
+  category: 'city' | 'village' | 'town' | 'trek' | 'stay' | 'cafe' | 'hidden_gem';
   subcategory?: 'dorm' | 'hostel' | 'hotel' | 'cafe';
   visited: boolean;
   priority: 1 | 2 | 3 | 4 | 5; // 5 = must visit

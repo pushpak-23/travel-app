@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useMapStore } from '@/store/mapStore';
 import { routeAPI } from '@/lib/api';
 
 export const RoutesList: React.FC = () => {
   const { routes, locations, setRoutes } = useMapStore();
+  const [viewMode, setViewMode] = useState<'flat' | 'grouped'>('grouped');
   const [editingRoute, setEditingRoute] = useState<{
     id: string;
     description: string;
@@ -24,6 +25,27 @@ export const RoutesList: React.FC = () => {
     train: { label: 'Train', icon: '🚆', tone: 'text-cyan-200 border-cyan-400/30 bg-cyan-500/10' },
     flight: { label: 'Flight', icon: '✈️', tone: 'text-indigo-200 border-indigo-400/30 bg-indigo-500/10' },
   };
+
+  const groupedRoutes = useMemo(() => {
+    const groups: Record<string, { label: string; routes: typeof routes }> = {};
+
+    routes.forEach((route) => {
+      const startLoc = locations.find((location) => location.id === route.start_location_id);
+      const endLoc = locations.find((location) => location.id === route.end_location_id);
+      if (!startLoc || !endLoc) return;
+
+      const startState = startLoc.state || 'Unassigned';
+      const endState = endLoc.state || 'Unassigned';
+      const label = startState === endState ? startState : `${startState} → ${endState}`;
+
+      if (!groups[label]) {
+        groups[label] = { label, routes: [] };
+      }
+      groups[label].routes.push(route);
+    });
+
+    return Object.values(groups).sort((a, b) => a.label.localeCompare(b.label));
+  }, [routes, locations]);
 
   const handleDeleteRoute = async (id: string) => {
     const confirmed = window.confirm('Delete this route?');
@@ -87,73 +109,116 @@ export const RoutesList: React.FC = () => {
     );
   }
 
+  const renderRouteCard = (route: (typeof routes)[number]) => {
+    const startLoc = locations.find((l) => l.id === route.start_location_id);
+    const endLoc = locations.find((l) => l.id === route.end_location_id);
+    const routeInfo = routeMeta[route.route_type] || {
+      label: 'Route',
+      icon: '🧭',
+      tone: 'text-slate-200 border-slate-400/30 bg-slate-500/10',
+    };
+
+    if (!startLoc || !endLoc) return null;
+
+    return (
+      <motion.div
+        key={route.id}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-4 rounded-xl bg-gradient-to-br from-emerald-950/35 via-slate-900/50 to-slate-950/60 hover:from-emerald-900/35 hover:via-slate-900/60 hover:to-slate-950/70 smooth-transition border border-emerald-500/20 hover:border-emerald-400/50 shadow-lg"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">{routeInfo.icon}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full border ${routeInfo.tone}`}>
+                {routeInfo.label}
+              </span>
+            </div>
+            <p className="text-sm font-semibold text-white truncate">{startLoc.name}</p>
+            <p className="text-xs text-slate-400 my-0.5">to</p>
+            <p className="text-sm font-semibold text-white truncate">{endLoc.name}</p>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-300">
+              {route.distance_km > 0 && (
+                <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10">📏 {route.distance_km} km</span>
+              )}
+              {route.travel_time_hours > 0 && (
+                <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10">⏱️ {route.travel_time_hours}h</span>
+              )}
+              {route.difficulty && (
+                <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10">💪 {route.difficulty}</span>
+              )}
+            </div>
+          </div>
+        </div>
+        {route.description && (
+          <p className="text-xs text-slate-300/80 mt-3 italic max-h-10 overflow-hidden">{route.description}</p>
+        )}
+        <div className="flex gap-2 mt-3">
+          <button
+            type="button"
+            onClick={() => openEditModal(route)}
+            className="flex-1 px-2 py-1.5 text-xs rounded-md bg-sky-500/15 border border-sky-400/30 text-sky-100 hover:bg-sky-500/25 smooth-transition"
+          >
+            ✏️ Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => handleDeleteRoute(route.id)}
+            className="flex-1 px-2 py-1.5 text-xs rounded-md bg-rose-500/15 border border-rose-400/30 text-rose-100 hover:bg-rose-500/25 smooth-transition"
+          >
+            🗑️ Delete
+          </button>
+        </div>
+      </motion.div>
+    );
+  };
+
   return (
     <>
-      <div className="space-y-3">
-        {routes.map((route) => {
-        const startLoc = locations.find((l) => l.id === route.start_location_id);
-        const endLoc = locations.find((l) => l.id === route.end_location_id);
-        const routeInfo = routeMeta[route.route_type] || {
-          label: 'Route',
-          icon: '🧭',
-          tone: 'text-slate-200 border-slate-400/30 bg-slate-500/10',
-        };
+      <div className="flex gap-2 mb-3 bg-white/5 p-1 rounded-lg">
+        <button
+          type="button"
+          onClick={() => setViewMode('grouped')}
+          className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium smooth-transition ${
+            viewMode === 'grouped'
+              ? 'bg-green-500/40 text-green-100 border border-green-400/50'
+              : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+          }`}
+        >
+          🗂️ By State
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode('flat')}
+          className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium smooth-transition ${
+            viewMode === 'flat'
+              ? 'bg-emerald-500/40 text-emerald-100 border border-emerald-400/50'
+              : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+          }`}
+        >
+          📋 All Routes
+        </button>
+      </div>
 
-        if (!startLoc || !endLoc) return null;
+      <div className="space-y-4">
+        {viewMode === 'grouped' ? (
+          groupedRoutes.map((group) => (
+            <div key={group.label} className="space-y-3">
+              <div className="text-xs uppercase tracking-wide text-green-200/80 font-semibold px-1">
+                {group.label}
+              </div>
 
-        return (
-          <motion.div
-            key={route.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-xl bg-gradient-to-br from-emerald-950/35 via-slate-900/50 to-slate-950/60 hover:from-emerald-900/35 hover:via-slate-900/60 hover:to-slate-950/70 smooth-transition border border-emerald-500/20 hover:border-emerald-400/50 shadow-lg"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">{routeInfo.icon}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full border ${routeInfo.tone}`}>
-                    {routeInfo.label}
-                  </span>
-                </div>
-                <p className="text-sm font-semibold text-white truncate">{startLoc.name}</p>
-                <p className="text-xs text-slate-400 my-0.5">to</p>
-                <p className="text-sm font-semibold text-white truncate">{endLoc.name}</p>
-                <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-300">
-                  {route.distance_km > 0 && (
-                    <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10">📏 {route.distance_km} km</span>
-                  )}
-                  {route.travel_time_hours > 0 && (
-                    <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10">⏱️ {route.travel_time_hours}h</span>
-                  )}
-                  {route.difficulty && (
-                    <span className="px-2 py-1 rounded-full bg-white/5 border border-white/10">💪 {route.difficulty}</span>
-                  )}
-                </div>
+              <div className="space-y-3">
+                {group.routes.map((route) => renderRouteCard(route))}
               </div>
             </div>
-            {route.description && (
-              <p className="text-xs text-slate-300/80 mt-3 italic max-h-10 overflow-hidden">{route.description}</p>
-            )}
-            <div className="flex gap-2 mt-3">
-              <button
-                type="button"
-                onClick={() => openEditModal(route)}
-                className="flex-1 px-2 py-1.5 text-xs rounded-md bg-sky-500/15 border border-sky-400/30 text-sky-100 hover:bg-sky-500/25 smooth-transition"
-              >
-                ✏️ Edit
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDeleteRoute(route.id)}
-                className="flex-1 px-2 py-1.5 text-xs rounded-md bg-rose-500/15 border border-rose-400/30 text-rose-100 hover:bg-rose-500/25 smooth-transition"
-              >
-                🗑️ Delete
-              </button>
-            </div>
-          </motion.div>
-        );
-      })}
+          ))
+        ) : (
+          <div className="space-y-3">
+            {routes.map((route) => renderRouteCard(route))}
+          </div>
+        )}
       </div>
 
       {editingRoute && (
