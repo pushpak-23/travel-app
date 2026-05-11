@@ -18,6 +18,8 @@ async function migrate() {
         longitude DECIMAL(9, 6) NOT NULL,
         category VARCHAR(50) NOT NULL,
         subcategory VARCHAR(50),
+        state VARCHAR(100),
+        itinerary_name VARCHAR(255),
         visited BOOLEAN DEFAULT false,
         priority INTEGER DEFAULT 3,
         tags JSONB DEFAULT '[]',
@@ -26,6 +28,17 @@ async function migrate() {
       );
     `);
     console.log('✓ locations table created');
+
+    // Add state and itinerary columns if they don't exist (for schema updates)
+    await pool.query(`
+      ALTER TABLE locations
+      ADD COLUMN IF NOT EXISTS state VARCHAR(100);
+    `);
+    await pool.query(`
+      ALTER TABLE locations
+      ADD COLUMN IF NOT EXISTS itinerary_name VARCHAR(255);
+    `);
+    console.log('✓ Added state and itinerary_name columns');
 
     // Create routes table
     await pool.query(`
@@ -85,6 +98,8 @@ async function migrate() {
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_locations_category ON locations(category);
       CREATE INDEX IF NOT EXISTS idx_locations_priority ON locations(priority);
+      CREATE INDEX IF NOT EXISTS idx_locations_state ON locations(state);
+      CREATE INDEX IF NOT EXISTS idx_locations_itinerary ON locations(itinerary_name);
       CREATE INDEX IF NOT EXISTS idx_routes_start_location ON routes(start_location_id);
       CREATE INDEX IF NOT EXISTS idx_routes_end_location ON routes(end_location_id);
       CREATE INDEX IF NOT EXISTS idx_notes_location ON notes(location_id);

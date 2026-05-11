@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import LocationCard from '@/components/LocationCard';
 import LocationsList from '@/components/LocationsList';
+import StateGroupList from '@/components/StateGroupList';
 import RoutesList from '@/components/RoutesList';
 import AddLocationModal from '@/components/AddLocationModal';
 import AddRouteModal from '@/components/AddRouteModal';
@@ -21,6 +22,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'locations' | 'routes'>('locations');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'grouped'>('grouped');
   const [locationCategories] = useState<string[]>(['all', 'village', 'town', 'trek', 'stay', 'cafe', 'hidden_gem']);
 
   return (
@@ -89,9 +91,37 @@ export default function Home() {
             <div className="flex-1 overflow-y-auto min-h-0 mb-3 pr-2">
               {activeTab === 'locations' ? (
                 <>
-                  {/* Locations List */}
+                  {/* View Mode Toggle for Locations */}
+                  <div className="flex gap-2 mb-3 bg-white/5 p-1 rounded-lg flex-shrink-0">
+                    <button
+                      onClick={() => setViewMode('grouped')}
+                      className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium smooth-transition ${
+                        viewMode === 'grouped'
+                          ? 'bg-teal-500/40 text-teal-100 border border-teal-400/50'
+                          : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                      }`}
+                    >
+                      🗂️ Groups
+                    </button>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium smooth-transition ${
+                        viewMode === 'list'
+                          ? 'bg-emerald-500/40 text-emerald-100 border border-emerald-400/50'
+                          : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                      }`}
+                    >
+                      📋 List
+                    </button>
+                  </div>
+
+                  {/* Locations Content */}
                   <div className="mb-4">
-                    <LocationsList filterCategory={filterCategory} onFilterChange={setFilterCategory} />
+                    {viewMode === 'grouped' ? (
+                      <StateGroupList />
+                    ) : (
+                      <LocationsList filterCategory={filterCategory} onFilterChange={setFilterCategory} />
+                    )}
                   </div>
 
                   {/* Location Details */}

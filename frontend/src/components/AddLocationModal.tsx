@@ -50,6 +50,8 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({
     category: Location['category'];
     priority: number;
     tags: string;
+    state?: string;
+    itinerary_name?: string;
   }>({
     name: '',
     description: '',
@@ -58,6 +60,8 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({
     category: 'village',
     priority: 3,
     tags: '',
+    state: '',
+    itinerary_name: '',
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -137,6 +141,8 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({
         category: formData.category,
         priority: Math.min(5, Math.max(1, parseInt(String(formData.priority)) || 3)),
         tags,
+        state: formData.state?.trim() || undefined,
+        itinerary_name: formData.itinerary_name?.trim() || undefined,
         visited: false,
       } as any);
 
@@ -150,6 +156,8 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({
         category: 'village',
         priority: 3,
         tags: '',
+        state: '',
+        itinerary_name: '',
       });
       setSearchQuery('');
       setCategoryDetectionHint('');
@@ -386,6 +394,37 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 smooth-transition text-xs"
                         placeholder="e.g., hiking, scenic, must-visit"
                       />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-200 block mb-1">
+                          State/Region
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.state || ''}
+                          onChange={(e) =>
+                            setFormData({ ...formData, state: e.target.value })
+                          }
+                          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 smooth-transition text-xs"
+                          placeholder="e.g., Himachal Pradesh"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-200 block mb-1">
+                          Itinerary/Route Name
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.itinerary_name || ''}
+                          onChange={(e) =>
+                            setFormData({ ...formData, itinerary_name: e.target.value })
+                          }
+                          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 smooth-transition text-xs"
+                          placeholder="e.g., Summer Trek 2024"
+                        />
+                      </div>
                     </div>
                   </>
                 )}

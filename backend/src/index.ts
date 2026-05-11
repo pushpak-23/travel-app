@@ -5,6 +5,7 @@ import locationRoutes from './routes/locations';
 import routeRoutes from './routes/routes';
 import noteRoutes from './routes/notes';
 import journeyRoutes from './routes/journeys';
+import groupRoutes from './routes/groups';
 import { pool } from './db';
 
 dotenv.config();
@@ -45,6 +46,7 @@ app.use('/api/locations', locationRoutes);
 app.use('/api/routes', routeRoutes);
 app.use('/api/notes', noteRoutes);
 app.use('/api/journeys', journeyRoutes);
+app.use('/api/groups', groupRoutes);
 
 // Error handling middleware
 app.use((err: any, req: Request, res: Response) => {
