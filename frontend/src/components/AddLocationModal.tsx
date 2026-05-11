@@ -51,7 +51,8 @@ const extractStateFromDisplayName = (displayName: string) => {
     return '';
   }
 
-  return filtered[filtered.length - 2] || '';
+  const candidate = filtered[filtered.length - 2] || '';
+  return normalizeStateName(candidate);
 };
 
 const reverseGeocodeState = async (latitude: number, longitude: number) => {
@@ -143,9 +144,13 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const handleSelectPlace = (result: SearchResult) => {
+  const handleSelectPlace = async (result: SearchResult) => {
     const detectedCategory = detectCategoryFromSearchResult(result);
-    const detectedState = normalizeStateName(extractStateFromDisplayName(result.display_name));
+    const reverseGeocodedState = normalizeStateName(
+      await reverseGeocodeState(parseFloat(result.lat), parseFloat(result.lon))
+    );
+    const displayNameState = extractStateFromDisplayName(result.display_name);
+    const detectedState = reverseGeocodedState || displayNameState;
 
     setFormData((prev) => ({
       ...prev,
@@ -282,7 +287,7 @@ export const AddLocationModal: React.FC<AddLocationModalProps> = ({
                         <button
                           key={idx}
                           type="button"
-                          onClick={() => handleSelectPlace(result)}
+                          onClick={() => { void handleSelectPlace(result); }}
                           className="w-full text-left px-3 py-2 hover:bg-white/10 smooth-transition border-b border-white/5 last:border-b-0"
                         >
                           <div className="text-xs font-semibold text-blue-300">
