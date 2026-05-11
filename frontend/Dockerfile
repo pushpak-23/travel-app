@@ -11,11 +11,12 @@ CMD ["npm", "run", "dev"]
 FROM base AS builder
 RUN npm install
 COPY . .
+RUN mkdir -p /app/public
 RUN npm run build
 
 FROM node:18-alpine AS prod
 WORKDIR /app
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 # Copy package files
 COPY package*.json ./
@@ -30,7 +31,7 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
 EXPOSE 3000
-ENV PORT 3000
+ENV PORT=3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
