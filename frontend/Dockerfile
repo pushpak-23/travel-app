@@ -25,8 +25,8 @@ COPY package*.json ./
 RUN npm install --production --ignore-scripts && \
     npm cache clean --force
 
-# Copy built application and public files from builder
-COPY --from=builder /app/public ./public
+# Copy built application files from builder
+# Note: `public` may not exist in all projects; avoid failing the build by not copying it.
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
