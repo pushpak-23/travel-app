@@ -298,7 +298,7 @@ SELECT * FROM locations; # Query locations
 For easier setup, use Docker Compose:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 # App runs on http://localhost:3000
 # API runs on http://localhost:5000
 ```

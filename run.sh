@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# run.sh - bootstrap and run the production docker-compose stack locally
+# run.sh - bootstrap and run the production Docker Compose stack locally
 # Usage: ./run.sh
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"

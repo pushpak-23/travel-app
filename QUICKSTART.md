@@ -2,47 +2,37 @@
 
 ## 🚀 5-Minute Setup
 
-### 1. Database Setup (PostgreSQL required)
+### 1. Clone and Run With Docker
+
+```bash
+git clone <your-repo-url>
+cd travel-app
+cp .env.example .env
+./run.sh
+```
+
+This is the recommended path. It builds the containers, starts PostgreSQL, runs migrations, and brings the app up on the host ports.
+
+### 2. Optional Manual Setup
+
+If you do not want Docker, run the backend and frontend separately:
 
 ```bash
 # Create database
 createdb travel_map_db
 
-# Set connection string
-export DATABASE_URL="postgresql://user:password@localhost:5432/travel_map_db"
-```
-
-### 2. Backend Setup
-
-```bash
+# Backend
 cd backend
-
-# Install and configure
 npm install
 cp .env.example .env
-# Edit .env and add your DATABASE_URL and MAPBOX_TOKEN
-
-# Initialize database
 npm run migrate
-
-# Start server
 npm run dev
-# API running at http://localhost:5000
-```
 
-### 3. Frontend Setup
-
-```bash
+# Frontend
 cd ../frontend
-
-# Install and configure
 npm install
 cp .env.local.example .env.local
-# Edit .env.local and add your MAPBOX_TOKEN
-
-# Start development server
 npm run dev
-# App running at http://localhost:3000
 ```
 
 ## 📍 Getting Mapbox Token

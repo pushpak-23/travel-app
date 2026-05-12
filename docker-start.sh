@@ -24,15 +24,15 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-# Check if Docker Compose is installed
-if ! command -v docker-compose &> /dev/null; then
-    echo -e "${RED}❌ Docker Compose is not installed${NC}"
-    echo "Visit: https://docs.docker.com/compose/install/"
+# Check if Docker Compose plugin is installed
+if ! docker compose version &> /dev/null; then
+    echo -e "${RED}❌ Docker Compose plugin is not installed${NC}"
+    echo "Visit: https://docs.docker.com/compose/"
     exit 1
 fi
 
 echo -e "${GREEN}✓ Docker found: $(docker --version)${NC}"
-echo -e "${GREEN}✓ Docker Compose found: $(docker-compose --version)${NC}"
+echo -e "${GREEN}✓ Docker Compose found: $(docker compose version)${NC}"
 echo ""
 
 # Check if .env file exists
@@ -99,25 +99,25 @@ case $MODE in
     dev)
         echo -e "${BLUE}🚀 Starting Development Stack...${NC}"
         echo ""
-        docker-compose up
+        docker compose up
         ;;
     prod)
         echo -e "${BLUE}🚀 Starting Production Stack...${NC}"
         echo ""
-        docker-compose -f docker-compose.prod.yml up -d
+        docker compose -f docker-compose.prod.yml up -d
         echo ""
         echo -e "${GREEN}✓ Production stack started in background${NC}"
         echo "Access: http://localhost:3000"
         echo ""
         echo "View logs:"
-        echo "  docker-compose -f docker-compose.prod.yml logs -f"
+        echo "  docker compose -f docker-compose.prod.yml logs -f"
         ;;
     stop)
         echo -e "${YELLOW}⏹️  Stopping all services...${NC}"
-        if [ -f docker-compose.prod.yml ] && docker-compose -f docker-compose.prod.yml ps 2>/dev/null | grep -q travel_map; then
-            docker-compose -f docker-compose.prod.yml down
+        if [ -f docker-compose.prod.yml ] && docker compose -f docker-compose.prod.yml ps 2>/dev/null | grep -q travel_map; then
+            docker compose -f docker-compose.prod.yml down
         else
-            docker-compose down
+            docker compose down
         fi
         echo -e "${GREEN}✓ All services stopped${NC}"
         ;;
@@ -125,10 +125,10 @@ case $MODE in
         echo -e "${BLUE}📋 Showing logs...${NC}"
         echo "(Press Ctrl+C to exit)"
         echo ""
-        if [ -f docker-compose.prod.yml ] && docker-compose -f docker-compose.prod.yml ps 2>/dev/null | grep -q travel_map; then
-            docker-compose -f docker-compose.prod.yml logs -f
+        if [ -f docker-compose.prod.yml ] && docker compose -f docker-compose.prod.yml ps 2>/dev/null | grep -q travel_map; then
+            docker compose -f docker-compose.prod.yml logs -f
         else
-            docker-compose logs -f
+            docker compose logs -f
         fi
         ;;
     db)
@@ -142,8 +142,8 @@ case $MODE in
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             echo -e "${YELLOW}Cleaning up...${NC}"
-            docker-compose down -v
-            docker-compose -f docker-compose.prod.yml down -v 2>/dev/null || true
+            docker compose down -v
+            docker compose -f docker-compose.prod.yml down -v 2>/dev/null || true
             echo -e "${GREEN}✓ Cleanup complete${NC}"
         else
             echo "Cleanup cancelled"

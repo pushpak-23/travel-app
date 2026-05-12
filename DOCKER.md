@@ -47,7 +47,7 @@ BACKEND_URL=http://localhost:5000
 ### 3. Start Development Stack
 
 ```bash
-docker-compose up
+docker compose up
 ```
 
 **First time only**: The database will automatically initialize with all required tables.
@@ -68,12 +68,12 @@ In another terminal:
 
 ```bash
 # All services
-docker-compose logs -f
+docker compose logs -f
 
 # Specific service
-docker-compose logs -f backend
-docker-compose logs -f frontend
-docker-compose logs -f postgres
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f postgres
 ```
 
 ## Production Deployment
@@ -103,13 +103,13 @@ DB_PASSWORD=strong_secure_password_123
 ### 2. Build Production Images
 
 ```bash
-docker-compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml build
 ```
 
 ### 3. Run Production Stack
 
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 The `-d` flag runs in detached mode (background).
@@ -121,7 +121,7 @@ The `-d` flag runs in detached mode (background).
 docker ps
 
 # View logs
-docker-compose -f docker-compose.prod.yml logs
+docker compose -f docker-compose.prod.yml logs
 
 # Health check backend
 curl http://localhost:5000/health
@@ -136,39 +136,39 @@ curl http://localhost:3000
 
 ```bash
 # Development
-docker-compose down
+docker compose down
 
 # Production
-docker-compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml down
 ```
 
 ### Stop But Keep Data
 
 ```bash
-docker-compose stop
+docker compose stop
 ```
 
 ### Start Existing Stack
 
 ```bash
-docker-compose start
+docker compose start
 ```
 
 ### Remove Everything (including data!)
 
 ```bash
 # ⚠️  WARNING: This deletes the database!
-docker-compose down -v
+docker compose down -v
 ```
 
 ### Rebuild Without Cache
 
 ```bash
 # Development
-docker-compose build --no-cache
+docker compose build --no-cache
 
 # Production
-docker-compose -f docker-compose.prod.yml build --no-cache
+docker compose -f docker-compose.prod.yml build --no-cache
 ```
 
 ### Access Database Directly
@@ -255,7 +255,7 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 Then restart:
 
 ```bash
-docker-compose restart
+docker compose restart
 ```
 
 ### "Connection refused" when accessing app
@@ -264,7 +264,7 @@ Services may still be starting. Wait 10-15 seconds and try again:
 
 ```bash
 # Monitor startup
-docker-compose logs -f
+docker compose logs -f
 
 # When you see "✓" checkmarks, app is ready
 ```
@@ -273,13 +273,13 @@ docker-compose logs -f
 
 ```bash
 # Stop everything
-docker-compose down -v
+docker compose down -v
 
 # Remove images
-docker-compose down -v --rmi all
+docker compose down -v --rmi all
 
 # Start fresh
-docker-compose up
+docker compose up
 ```
 
 ## Environment Variables Reference
@@ -357,8 +357,8 @@ docker-compose up
 ## Data Persistence
 
 - **Database**: Stored in Docker volume `postgres_data` (or `postgres_data_prod`)
-- **Persists across**: `docker-compose stop` and `docker-compose start`
-- **Lost on**: `docker-compose down -v` (the `-v` flag removes volumes)
+- **Persists across**: `docker compose stop` and `docker compose start`
+- **Lost on**: `docker compose down -v` (the `-v` flag removes volumes)
 
 To backup database:
 
@@ -395,10 +395,10 @@ docker exec -i travel_map_db psql -U traveler -d travel_map_db < backup.sql
 
 For issues:
 
-1. Check logs: `docker-compose logs`
+1. Check logs: `docker compose logs`
 2. Verify environment variables: `cat .env`
-3. Check connectivity: `docker-compose exec backend curl http://postgres:5432`
-4. Restart services: `docker-compose restart`
+3. Check connectivity: `docker compose exec backend curl http://postgres:5432`
+4. Restart services: `docker compose restart`
 
 ## Additional Resources
 

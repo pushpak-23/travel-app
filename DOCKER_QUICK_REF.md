@@ -7,7 +7,7 @@
 ```bash
 ./docker-start.sh dev
 # or
-docker-compose up
+docker compose up
 ```
 
 Accessible at: **http://localhost:3000**
@@ -17,7 +17,7 @@ Accessible at: **http://localhost:3000**
 ```bash
 ./docker-start.sh prod
 # or
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 Accessible at: **http://localhost:3000**
@@ -29,7 +29,7 @@ Accessible at: **http://localhost:3000**
 ```bash
 ./docker-start.sh stop
 # or
-docker-compose down
+docker compose down
 ```
 
 ---
@@ -39,12 +39,12 @@ docker-compose down
 ```bash
 ./docker-start.sh logs
 # or
-docker-compose logs -f
+docker compose logs -f
 
 # Specific service
-docker-compose logs -f backend
-docker-compose logs -f frontend
-docker-compose logs -f postgres
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f postgres
 ```
 
 ---
@@ -93,7 +93,7 @@ cat .env
 Wait 15 seconds for initialization. Check logs:
 
 ```bash
-docker-compose logs
+docker compose logs
 ```
 
 ### Full Clean Reset
@@ -101,7 +101,7 @@ docker-compose logs
 ```bash
 ./docker-start.sh clean
 # or
-docker-compose down -v
+docker compose down -v
 ```
 
 ---
@@ -203,13 +203,13 @@ SELECT id, name, route_type FROM routes;
 ### Restart Services
 
 ```bash
-docker-compose restart
+docker compose restart
 ```
 
 ### Rebuild Images
 
 ```bash
-docker-compose build
+docker compose build
 ```
 
 ### View Resource Usage
@@ -246,13 +246,13 @@ docker inspect travel_map_db
 2. **Build production images**:
 
    ```bash
-   docker-compose -f docker-compose.prod.yml build
+   docker compose -f docker-compose.prod.yml build
    ```
 
 3. **Start services**:
 
    ```bash
-   docker-compose -f docker-compose.prod.yml up -d
+   docker compose -f docker-compose.prod.yml up -d
    ```
 
 4. **Verify**:
@@ -313,7 +313,7 @@ docker exec -i travel_map_db psql -U traveler -d travel_map_db < backup.sql
 - [ ] No port conflicts (check with `lsof -i :PORT`)
 - [ ] Sufficient disk space (2GB minimum)
 - [ ] Services fully started (wait 15 seconds)
-- [ ] Logs show no errors (`docker-compose logs`)
+- [ ] Logs show no errors (`docker compose logs`)
 - [ ] Backend health check passes (`curl localhost:5000/health`)
 - [ ] Frontend loads (`curl localhost:3000`)
 - [ ] Database connection works
@@ -345,8 +345,8 @@ See [DOCKER.md](./DOCKER.md) for complete documentation.
 ./docker-start.sh clean
 
 # Custom
-docker-compose up -d          # Start background
-docker-compose down -v        # Remove with volumes
-docker-compose restart        # Restart services
-docker-compose exec <srv> sh  # Shell into service
+docker compose up -d          # Start background
+docker compose down -v        # Remove with volumes
+docker compose restart        # Restart services
+docker compose exec <srv> sh  # Shell into service
 ```

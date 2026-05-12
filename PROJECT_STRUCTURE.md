@@ -206,7 +206,7 @@ Frontend (Next.js)  ←HTTP→  Backend (Express)  ←SQL→  PostgreSQL
 ### Docker Deployment
 
 ```
-docker-compose up
+docker compose up
 ├── postgres:15-postgis (port 5432)
 ├── express-api (port 5000)
 └── next-app (port 3000)

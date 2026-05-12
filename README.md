@@ -99,6 +99,24 @@ travel_project/
 
 ## 🚀 Getting Started
 
+### Recommended: Run With Docker
+
+After cloning the repo, the simplest way to start the app is:
+
+```bash
+git clone <your-repo-url>
+cd travel-app
+cp .env.example .env
+./run.sh
+```
+
+That script uses Docker Compose, builds the images locally, starts PostgreSQL, runs the database migrations, and then exposes the app on:
+
+- Frontend: http://localhost:3000
+- Backend: http://localhost:5000
+
+If you are running on a server with a public or floating IP, replace the localhost URLs in `.env` with your server IP before starting.
+
 ### Prerequisites
 
 - Node.js 18+
@@ -106,23 +124,11 @@ travel_project/
 - Mapbox GL account (get free token at [mapbox.com](https://mapbox.com))
 - npm or yarn
 
-### Database Setup
+### Manual Setup
 
-1. **Create a PostgreSQL database**:
+Use this only if you want to run the backend and frontend outside Docker.
 
-```bash
-createdb travel_map_db
-```
-
-2. **Run migrations**:
-
-```bash
-cd backend
-npm install
-npm run migrate
-```
-
-### Backend Setup
+#### Backend Setup
 
 ```bash
 cd backend
@@ -143,7 +149,7 @@ cp .env.example .env
 npm run dev
 ```
 
-### Frontend Setup
+#### Frontend Setup
 
 ```bash
 cd frontend
